@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SIAM DIGITAL LAB - University-Level Computer Architecture Engine</title>
+  <style>
+    :root {
+      --bg: #04080f;
+      --panel: #0a111e;
+      --panel-border: #16263d;
+      --text: #e2eafc;
+      --muted: #6b829d;
+      --theme: #3b82f6;
+      --laser-amber: #ffb703;
+      --laser-green: #52b788;
+      --laser-purple: #c084fc;
+      --laser-red: #ef4444;
+      --phi: 1.618;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Courier New", monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding-bottom: 30px;
+      overflow-x: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    header {
+      width: 100%;
+      max-width: 540px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--panel-border);
+      background: rgba(10, 17, 30, 0.92);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge-uni {
+      font-size: 9.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--theme);
+      color: var(--theme);
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      font-family: monospace;
+    }
+    
+    .lang-toggle-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--panel-border);
+      color: var(--theme);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 900;
+      font-family: monospace;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .lang-toggle-btn:active {
+      background: var(--theme);
+      color: #000;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 540px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* สลับ 6 โมเดลวิชาดิจิทัลระดับมหาวิทยาลัย */
+    .model-switch {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 3px;
+    }
+    .switch-btn {
+      height: 42px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      color: var(--muted);
+      border-radius: 5px;
+      font-size: 7.5px;
+      font-weight: bold;
+      font-family: monospace;
+      cursor: pointer;
+      transition: 0.2s;
+      padding: 2px 1px;
+      line-height: 1.2;
+      text-align: center;
+    }
+    .switch-btn.active {
+      border-color: var(--theme);
+      color: #fff;
+      background: rgba(59, 130, 246, 0.08);
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
+    }
+
+    /* 3D Viewport: Golden Ratio (Width / 1.618) */
+    .cad-viewport {
+      width: 100%;
+      aspect-ratio: 1.618 / 1;
+      background: #02050a;
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 35px rgba(0,0,0,0.95);
+      touch-action: none;
+      transition: background 0.3s ease;
+    }
+    svg#cadStage {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .math-hud-overlay {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .formula-card {
+      background: rgba(4, 8, 15, 0.88);
+      border: 1px solid var(--panel-border);
+      border-left: 2px solid var(--theme);
+      border-radius: 4px;
+      padding: 5px 8px;
+      font-size: 9px;
+      font-family: "Courier New", Courier, monospace;
+      backdrop-filter: blur(4px);
+    }
+    .formula-title {
+      font-size: 7.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      letter-spacing: 0.5px;
+    }
+    .formula-eq {
+      color: #fff;
+      font-weight: bold;
+    }
+    .formula-eq span.hl {
+      color: var(--theme);
+      font-weight: 900;
+    }
+
+    .viewport-tools {
+      display: flex;
+      gap: 5px;
+      pointer-events: auto;
+    }
+    .tool-btn {
+      background: rgba(10, 17, 30, 0.85);
+      border: 1px solid var(--panel-border);
+      color: var(--theme);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 9.5px;
+      font-family: monospace;
+      font-weight: bold;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    }
+    .tool-btn.active {
+      background: var(--theme);
+      color: #000;
+    }
+
+    .pedagogy-banner {
+      background: rgba(59, 130, 246, 0.04);
+      border: 1px dashed rgba(59, 130, 246, 0.3);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 10px;
+      color: #c0d3eb;
+      font-family: monospace;
+      line-height: 1.35;
+    }
+    .pedagogy-banner strong {
+      color: var(--theme);
+    }
+
+    .palette-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+    }
+    .palette-btn {
+      height: 28px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      color: var(--muted);
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: monospace;
+      transition: 0.2s;
+    }
+    .palette-btn.active {
+      border-color: var(--theme);
+      color: #fff;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .ai-prompt-box {
+      background: rgba(192, 132, 252, 0.05);
+      border: 1px solid rgba(192, 132, 252, 0.3);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ai-prompt-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      font-family: monospace;
+      font-weight: bold;
+      color: var(--laser-purple);
+    }
+    .ai-level-tabs {
+      display: flex;
+      gap: 4px;
+    }
+    .level-tab-btn {
+      background: transparent;
+      border: 1px solid rgba(192, 132, 252, 0.4);
+      color: #c084fc;
+      border-radius: 3px;
+      font-size: 8px;
+      padding: 2px 6px;
+      cursor: pointer;
+      font-family: monospace;
+    }
+    .level-tab-btn.active {
+      background: var(--laser-purple);
+      color: #000;
+      font-weight: bold;
+    }
+    .btn-copy-prompt {
+      background: rgba(192, 132, 252, 0.15);
+      border: 1px solid var(--laser-purple);
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: monospace;
+      transition: 0.2s;
+    }
+    .btn-copy-prompt:active {
+      background: var(--laser-purple);
+      color: #000;
+    }
+    .ai-prompt-preview {
+      font-size: 9.5px;
+      color: #d1d5db;
+      font-family: "Courier New", Courier, monospace;
+      line-height: 1.35;
+      background: rgba(0,0,0,0.3);
+      padding: 6px 8px;
+      border-radius: 4px;
+      border-left: 2px solid var(--laser-purple);
+      white-space: pre-wrap;
+      max-height: 65px;
+      overflow-y: auto;
+    }
+
+    .control-panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .slider-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      color: var(--muted);
+      font-family: monospace;
+    }
+    .slider-info span.val {
+      color: var(--theme);
+      font-weight: bold;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 20px;
+      background: transparent;
+      margin: 0;
+      cursor: pointer;
+    }
+    input[type=range]:focus { outline: none; }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 5px;
+      background: #060c14;
+      border: 1px solid var(--panel-border);
+      border-radius: 3px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: var(--theme);
+      box-shadow: 0 0 10px var(--theme);
+      cursor: pointer;
+      margin-top: -7px;
+      border: 2px solid #fff;
+    }
+
+    .action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .btn-action {
+      height: 38px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: bold;
+      font-family: monospace;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+    .btn-export {
+      background: transparent;
+      border: 1px solid var(--theme);
+      color: var(--theme);
+    }
+    .btn-print {
+      background: var(--theme);
+      border: 1px solid var(--theme);
+      color: #000;
+      box-shadow: 0 0 14px rgba(59, 130, 246, 0.3);
+    }
+
+    .spec-card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      font-family: monospace;
+    }
+    .spec-item { color: var(--muted); }
+    .spec-item strong { color: var(--text); }
+
+    /* ====================================================
+       EDITORIAL MAGAZINE A4 ENGINE (STRICT 1-PAGE A4)
+       ==================================================== */
+    #printLayoutSheet {
+      display: none;
+    }
+
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 0 !important;
+      }
+      html, body {
+        width: 100% !important;
+        height: 100% !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+      }
+      header, .app-container {
+        display: none !important;
+      }
+      
+      #printLayoutSheet {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 95% !important;
+        max-width: 272mm !important;
+        height: 140mm !important;
+        max-height: 140mm !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+        background: #ffffff !important;
+        page-break-inside: avoid !important;
+        page-break-after: avoid !important;
+        break-inside: avoid !important;
+        break-after: avoid !important;
+        font-family: "Georgia", "Times New Roman", serif;
+      }
+
+      .mag-header-bar {
+        height: 8mm;
+        border-bottom: 0.5pt solid #111;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 6.5pt;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #222;
+        padding: 0 1mm;
+      }
+      .mag-header-bar strong {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-weight: 900;
+        letter-spacing: 2px;
+      }
+
+      .mag-editorial-body {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 36% 64%;
+        gap: 4mm;
+        padding: 2.5mm 0;
+        overflow: hidden;
+      }
+
+      .mag-col-theory {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding-right: 3mm;
+        border-right: 0.5pt solid #ccc;
+      }
+      .mag-kicker {
+        font-size: 5.5pt;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        color: #666;
+        text-transform: uppercase;
+        margin-bottom: 1mm;
+      }
+      .mag-title {
+        font-size: 11pt;
+        font-weight: bold;
+        line-height: 1.15;
+        color: #000;
+        margin: 0 0 1.5mm 0;
+        letter-spacing: -0.2px;
+      }
+      .mag-summary {
+        font-size: 6.5pt;
+        line-height: 1.35;
+        color: #333;
+        text-align: justify;
+      }
+      .mag-summary::first-letter {
+        font-size: 16pt;
+        float: left;
+        line-height: 0.85;
+        padding-right: 1.5mm;
+        font-weight: bold;
+        color: #000;
+        font-family: "Georgia", serif;
+      }
+
+      .mag-formula-box {
+        background: #f8fafc;
+        border-left: 2pt solid #000;
+        padding: 1.5mm 2.2mm;
+        margin: 1.5mm 0;
+      }
+      .mag-formula-box .f-label {
+        font-size: 4.8pt;
+        font-family: sans-serif;
+        font-weight: bold;
+        letter-spacing: 0.8px;
+        color: #666;
+        text-transform: uppercase;
+      }
+      .mag-formula-box .f-math {
+        font-size: 7.5pt;
+        font-weight: bold;
+        color: #000;
+        margin-top: 0.5mm;
+        font-family: "Courier New", Courier, monospace;
+      }
+
+      .mag-ai-box {
+        background: #faf5ff;
+        border: 0.5pt dashed #a855f7;
+        padding: 1.5mm 2mm;
+        border-radius: 2px;
+        font-size: 5pt;
+        color: #4c1d95;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.3;
+      }
+      .mag-ai-box strong {
+        color: #6b21a8;
+        text-transform: uppercase;
+      }
+
+      .mag-specs-grid {
+        font-size: 5.2pt;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #444;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.8mm 2mm;
+        border-top: 0.5pt solid #ddd;
+        padding-top: 1.2mm;
+      }
+      .mag-specs-grid strong {
+        color: #000;
+      }
+
+      .mag-col-visual {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: #ffffff;
+      }
+      .mag-col-visual svg {
+        width: 100%;
+        height: 100%;
+        max-height: 104mm;
+        display: block;
+      }
+      .mag-figure-caption {
+        position: absolute;
+        bottom: 0.5mm;
+        right: 1mm;
+        font-size: 5pt;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #777;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+      }
+
+      .mag-footer-folio {
+        height: 6mm;
+        border-top: 0.5pt solid #111;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 5.8pt;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #555;
+        padding: 0 1mm;
+      }
+      .mag-footer-folio .page-num {
+        font-weight: bold;
+        color: #000;
+        font-family: "Georgia", serif;
+        font-size: 7.5pt;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <span class="badge-uni" id="badgeTheme">SIAM DIGITAL LAB</span>
+      <strong style="font-size: 11px;" id="headerTitle">COMPUTER ARCHITECTURE</strong>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button class="lang-toggle-btn" id="btnLangToggle" onclick="toggleLanguage()">🌐 TH | EN</button>
+      <div style="font-size: 9.5px; color: var(--muted); font-family: monospace;">Φ 1.618</div>
+    </div>
+  </header>
+
+  <div class="app-container">
+    
+    <!-- ปุ่มสลับ 6 โมเดลดิจิทัลระดับมหาวิทยาลัย -->
+    <div class="model-switch">
+      <button class="switch-btn active" id="btnModelPipe" onclick="switchModel('pipeline')">⚡ PIPE<br><small id="btnSubPipe">ท่อคำสั่ง</small></button>
+      <button class="switch-btn" id="btnModelFsm" onclick="switchModel('fsm')">🔄 FSM<br><small id="btnSubFsm">สเตตแมชชีน</small></button>
+      <button class="switch-btn" id="btnModelTiming" onclick="switchModel('timing')">⏱️ TIME<br><small id="btnSubTiming">ไดอะแกรมเวลา</small></button>
+      <button class="switch-btn" id="btnModelCache" onclick="switchModel('cache')">🧠 CACHE<br><small id="btnSubCache">แคชเมมโมรี</small></button>
+      <button class="switch-btn" id="btnModelAlu" onclick="switchModel('alu')">🧮 ALU<br><small id="btnSubAlu">หน่วยคำนวณ</small></button>
+      <button class="switch-btn" id="btnModelFpga" onclick="switchModel('fpga')">🔌 FPGA<br><small id="btnSubFpga">ลอจิกอาร์เรย์</small></button>
+    </div>
+
+    <!-- 3D Viewport บนมือถือ -->
+    <div class="cad-viewport" id="viewportTouch">
+      <div class="math-hud-overlay">
+        <div class="formula-card">
+          <div class="formula-title" id="hudTopic">CPU DATAPATH & PIPELINE ARCHITECTURE</div>
+          <div class="formula-eq" id="hudFormula">CPI = 1 + Stall_cycles &nbsp;|&nbsp; <span class="hl">Speedup = N / (1 + N·Stall)</span></div>
+        </div>
+        <div class="viewport-tools">
+          <button class="tool-btn" id="btnSpin" onclick="toggleSpin()">🔄 CLOCK</button>
+        </div>
+      </div>
+      <svg id="cadStage" viewBox="0 0 600 370"></svg>
+    </div>
+
+    <!-- แถบสรุปแก่นสถาปัตยกรรมดิจิทัล -->
+    <div class="pedagogy-banner" id="pedagogyBanner">
+      <strong>แก่นระบบดิจิทัล:</strong> การประสานงานสัญญาณนาฬิกา (Clock Cycle) ขับเคลื่อนข้อมูลผ่านท่อคำสั่ง 5 ขั้นตอน (IF, ID, EX, MEM, WB)
+    </div>
+
+    <!-- แถบสลับ Color Palette 4 ธีมฮาร์ดแวร์ -->
+    <div class="palette-selector">
+      <button class="palette-btn active" id="palCyber" onclick="setPalette('cyber')">🌐 CYBER</button>
+      <button class="palette-btn" id="palChalk" onclick="setPalette('chalk')">📐 SCHEMATIC</button>
+      <button class="palette-btn" id="palAxis" onclick="setPalette('axis')">🟢 BUS-LOGIC</button>
+      <button class="palette-btn" id="palPaper" onclick="setPalette('paper')">📄 PAPER</button>
+    </div>
+
+    <!-- กล่อง AI PROMPT LAB -->
+    <div class="ai-prompt-box">
+      <div class="ai-prompt-header">
+        <span id="txtAiHeader">🤖 ARCHITECTURE AI LAB</span>
+        <div class="ai-level-tabs">
+          <button class="level-tab-btn active" id="btnLvlBasic" onclick="setPromptLevel('basic')">INTUITIVE</button>
+          <button class="level-tab-btn" id="btnLvlAdv" onclick="setPromptLevel('adv')">VLSI DESIGN</button>
+        </div>
+        <button class="btn-copy-prompt" onclick="copyCurrentPrompt()">📋 COPY</button>
+      </div>
+      <div class="ai-prompt-preview" id="aiPromptPreview">กำลังสร้าง Master Prompt สำหรับสถาปัตยกรรมนี้...</div>
+    </div>
+
+    <div class="control-panel">
+      
+      <div class="slider-group">
+        <div class="slider-info">
+          <span id="lblRot">CHIP ROTATION (มุมมองชิป 360°)</span>
+          <span class="val" id="valRot">45°</span>
+        </div>
+        <input type="range" id="rotSlider" min="0" max="360" value="45" oninput="stopSpin(); updateRender();">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-info">
+          <span id="lblTilt">LAYER TILT (มุมก้ม-เงยเลเยอร์)</span>
+          <span class="val" id="valTilt">30°</span>
+        </div>
+        <input type="range" id="tiltSlider" min="10" max="75" value="30" oninput="updateRender()">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-info">
+          <span id="lblScale">BUS WIDTH SCALE (สเกลบัสข้อมูล)</span>
+          <span class="val" id="valScale">1.00x</span>
+        </div>
+        <input type="range" id="scaleSlider" min="60" max="130" value="100" oninput="updateRender()">
+      </div>
+
+      <div class="slider-group" id="customSliderGroup">
+        <div class="slider-info">
+          <span id="customSliderLabel">PIPELINE STAGES (จำนวนสเตจท่อคำสั่ง N)</span>
+          <span class="val" id="valCustom">5 สเตจ</span>
+        </div>
+        <input type="range" id="customSlider" min="3" max="8" value="5" oninput="updateRender()">
+      </div>
+
+      <div class="action-row">
+        <button class="btn-action btn-export" id="btnExportSvg" onclick="exportSVG()">💾 EXPORT SCHEMATIC</button>
+        <button class="btn-action btn-print" id="btnPrintEditorial" onclick="printEditorialLayout()">📰 PRINT ARCHITECTURE A4</button>
+      </div>
+
+    </div>
+
+    <div class="spec-card" id="specCard"></div>
+
+  </div>
+
+  <!-- แผ่นพิมพ์สไตล์วารสารวิชาการคอมพิวเตอร์ A4 EDITORIAL -->
+  <div id="printLayoutSheet">
+    
+    <div class="mag-header-bar">
+      <span>GLOBAL COMPUTER ARCHITECTURE INITIATIVE • THAILAND</span>
+      <strong>VLSI & DIGITAL SYSTEMS REVIEW • MONOGRAPH 2026</strong>
+    </div>
+
+    <div class="mag-editorial-body">
+      
+      <div class="mag-col-theory">
+        <div>
+          <div class="mag-kicker" id="magKicker">SECTION I • MICROARCHITECTURE</div>
+          <h1 class="mag-title" id="magTitle">CPU Datapath & Pipelining</h1>
+          <div class="mag-summary" id="magSummary">
+            High-performance processor design relies on instruction pipelining, overlapping execution phases across a shared hardware datapath. Managing data hazards and control stalls remains paramount for optimal instruction throughput.
+          </div>
+        </div>
+
+        <div class="mag-formula-box">
+          <div class="f-label">PERFORMANCE METRIC</div>
+          <div class="f-math" id="magFormula">Speedup = N / (1 + N·Stall)</div>
+        </div>
+
+        <div class="mag-ai-box">
+          <strong>VLSI & Architecture Inquiry:</strong>
+          <div id="magAiShortPrompt" style="margin-top:0.5mm;">
+            "Explain how structural hazards and data forwarding resolve pipeline stalls in 5-stage RISC processors."
+          </div>
+        </div>
+
+        <div class="mag-specs-grid" id="magSpecsGrid">
+          <div>TOPOLOGY: <strong>PIPELINE DATAPATH</strong></div>
+          <div>STAGES: <strong id="magSpecDisks">N=5 STAGES</strong></div>
+          <div>CLOCK: <strong>SYNCHRONOUS EDGE</strong></div>
+          <div>RATIO: <strong>1:1.618 GOLDEN</strong></div>
+        </div>
+      </div>
+
+      <div class="mag-col-visual">
+        <div id="printCanvasContainer" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"></div>
+        <div class="mag-figure-caption" id="magFigCaption">FIG. 01 — 5-STAGE RISC PIPELINE DATAPATH SCHEMATIC</div>
+      </div>
+
+    </div>
+
+    <div class="mag-footer-folio">
+      <span>SIAM DIGITAL LAB • OPEN EDUCATIONAL RESOURCE</span>
+      <span id="magIssueCode">TH-DIGITAL-MONO-VOL.2026 • 001</span>
+      <span class="page-num">P. 01 / 01</span>
+    </div>
+
+  </div>
+
+  <script>
+    let activeModel = 'pipeline';
+    let currentLang = 'th';
+    let activePalette = 'cyber';
+    let activePromptLevel = 'basic';
+    let currentColor = '#3b82f6';
+    let isSpinning = false;
+    let spinAnimId = null;
+    let currentMasterPrompt = '';
+
+    function toggleLanguage() {
+      currentLang = (currentLang === 'th') ? 'en' : 'th';
+      document.getElementById('btnLangToggle').innerText = currentLang === 'th' ? '🌐 TH | EN' : '🌐 EN | TH';
+      
+      if (currentLang === 'th') {
+        document.getElementById('headerTitle').innerText = "COMPUTER ARCHITECTURE";
+        document.getElementById('btnSubPipe').innerText = "ท่อคำสั่ง";
+        document.getElementById('btnSubFsm').innerText = "สเตตแมชชีน";
+        document.getElementById('btnSubTiming').innerText = "ไดอะแกรมเวลา";
+        document.getElementById('btnSubCache').innerText = "แคชเมมโมรี";
+        document.getElementById('btnSubAlu').innerText = "หน่วยคำนวณ";
+        document.getElementById('btnSubFpga').innerText = "ลอจิกอาร์เรย์";
+        document.getElementById('txtAiHeader').innerText = "🤖 ARCHITECTURE AI LAB";
+        document.getElementById('lblRot').innerText = "CHIP ROTATION (มุมมองชิป 360°)";
+        document.getElementById('lblTilt').innerText = "LAYER TILT (มุมก้ม-เงยเลเยอร์)";
+        document.getElementById('lblScale').innerText = "BUS WIDTH SCALE (สเกลบัสข้อมูล)";
+        document.getElementById('btnExportSvg').innerText = "💾 EXPORT SCHEMATIC";
+        document.getElementById('btnPrintEditorial').innerText = "📰 PRINT ARCHITECTURE A4";
+      } else {
+        document.getElementById('headerTitle').innerText = "DIGITAL SYSTEMS LAB";
+        document.getElementById('btnSubPipe').innerText = "Pipeline";
+        document.getElementById('btnSubFsm').innerText = "FSM Nodes";
+        document.getElementById('btnSubTiming').innerText = "Timing Wave";
+        document.getElementById('btnSubCache').innerText = "Cache L1/L2";
+        document.getElementById('btnSubAlu').innerText = "ALU Arrays";
+        document.getElementById('btnSubFpga').innerText = "FPGA LUTs";
+        document.getElementById('txtAiHeader').innerText = "🤖 ARCHITECTURE AI LAB";
+        document.getElementById('lblRot').innerText = "CHIP ROTATION (360° View)";
+        document.getElementById('lblTilt').innerText = "LAYER TILT (Elevation)";
+        document.getElementById('lblScale').innerText = "BUS WIDTH SCALE (Bus Sizing)";
+        document.getElementById('btnExportSvg').innerText = "💾 EXPORT SCHEMATIC";
+        document.getElementById('btnPrintEditorial').innerText = "📰 PRINT ARCHITECTURE A4";
+      }
+
+      switchModel(activeModel);
+    }
+
+    function setPalette(pal) {
+      activePalette = pal;
+      document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('pal' + pal.charAt(0).toUpperCase() + pal.slice(1)).classList.add('active');
+
+      const vp = document.getElementById('viewportTouch');
+
+      if (pal === 'cyber') {
+        currentColor = '#3b82f6';
+        document.documentElement.style.setProperty('--theme', '#3b82f6');
+        vp.style.background = '#02050a';
+      } else if (pal === 'chalk') {
+        currentColor = '#38bdf8'; // สีน้ำเงินไอซีลอจิก
+        document.documentElement.style.setProperty('--theme', '#38bdf8');
+        vp.style.background = '#091526';
+      } else if (pal === 'axis') {
+        currentColor = '#52b788'; // สีบัสเขียวลอจิก
+        document.documentElement.style.setProperty('--theme', '#52b788');
+        vp.style.background = '#06120d';
+      } else {
+        currentColor = '#2563eb';
+        document.documentElement.style.setProperty('--theme', '#2563eb');
+        vp.style.background = '#f8fafc';
+      }
+      updateRender();
+    }
+
+    function setPromptLevel(lvl) {
+      activePromptLevel = lvl;
+      document.getElementById('btnLvlBasic').classList.toggle('active', lvl === 'basic');
+      document.getElementById('btnLvlAdv').classList.toggle('active', lvl === 'adv');
+      updateRender();
+    }
+
+    function switchModel(m) {
+      activeModel = m;
+      document.getElementById('btnModelPipe').classList.toggle('active', m === 'pipeline');
+      document.getElementById('btnModelFsm').classList.toggle('active', m === 'fsm');
+      document.getElementById('btnModelTiming').classList.toggle('active', m === 'timing');
+      document.getElementById('btnModelCache').classList.toggle('active', m === 'cache');
+      document.getElementById('btnModelAlu').classList.toggle('active', m === 'alu');
+      document.getElementById('btnModelFpga').classList.toggle('active', m === 'fpga');
+
+      const customLabel = document.getElementById('customSliderLabel');
+      const customSlider = document.getElementById('customSlider');
+      const banner = document.getElementById('pedagogyBanner');
+
+      if (m === 'pipeline') {
+        customSlider.min = 3; customSlider.max = 8; customSlider.value = 5;
+        if (currentLang === 'th') {
+          customLabel.innerText = "PIPELINE STAGES (จำนวนสเตจท่อคำสั่ง N)";
+          banner.innerHTML = `<strong>แก่นระบบดิจิทัล:</strong> การประสานงานสัญญาณนาฬิกา (Clock Cycle) ขับเคลื่อนข้อมูลผ่านท่อคำสั่ง <em>N</em> ขั้นตอน`;
+        } else {
+          customLabel.innerText = "PIPELINE STAGES (Datapath Stages N)";
+          banner.innerHTML = `<strong>Core Digital:</strong> Synchronous clock cycles driving instructions across <em>N</em> sequential pipeline stages.`;
+        }
+      } else if (m === 'fsm') {
+        customSlider.min = 3; customSlider.max = 8; customSlider.value = 4;
+        if (currentLang === 'th') {
+          customLabel.innerText = "FSM STATES (จำนวนสถานะในเครื่องกล N)";
+          banner.innerHTML = `<strong>แก่นระบบดิจิทัล:</strong> เครื่องจักรสถานะจำกัด (Finite State Machine) ควบคุมลำดับตรรกะแบบมีเงื่อนไข`;
+        } else {
+          customLabel.innerText = "FSM STATES (State Transition Nodes N)";
+          banner.innerHTML = `<strong>Core Digital:</strong> Finite State Machines managing sequential state transitions under conditional inputs.`;
+        }
+      } else if (m === 'timing') {
+        customSlider.min = 2; customSlider.max = 10; customSlider.value = 5;
+        if (currentLang === 'th') {
+          customLabel.innerText = "PROPAGATION DELAY (ความหน่วงเวลาเกต ns)";
+          banner.innerHTML = `<strong>แก่นระบบดิจิทัล:</strong> วิเคราะห์ Setup Time, Hold Time และ Critical Path ในวงจรซิงโครนัส`;
+        } else {
+          customLabel.innerText = "PROPAGATION DELAY (Gate Delay ns)";
+          banner.innerHTML = `<strong>Core Digital:</strong> Timing analysis of Setup/Hold violations and critical path delays in synchronous logic.`;
+        }
+      } else if (m === 'cache') {
+        customSlider.min = 1; customSlider.max = 4; customSlider.value = 2;
+        if (currentLang === 'th') {
+          customLabel.innerText = "CACHE ASSOCIATIVITY (ระดับความสัมพันธ์ Way)";
+          banner.innerHTML = `<strong>แก่นระบบดิจิทัล:</strong> การจัดทำดัชนีแคช (Tag, Index, Offset) เพื่อลดอัตราการพลาด (Cache Miss Rate)`;
+        } else {
+          customLabel.innerText = "CACHE ASSOCIATIVITY (Set-Associativity Ways)";
+          banner.innerHTML = `<strong>Core Digital:</strong> Memory hierarchy mapping (Tag, Index, Offset) minimizing cache miss penalties.`;
+        }
+      } else if (m === 'alu') {
+        customSlider.min = 8; customSlider.max = 64; customSlider.value = 32;
+        if (currentLang === 'th') {
+          customLabel.innerText = "ALU BIT WIDTH (ขนาดความกว้างบิตบัส)";
+          banner.innerHTML = `<strong>แก่นระบบดิจิทัล:</strong> หน่วยคำนวณและตรรกะ (ALU) พร้อมวงจรทดทดเร็ว (Carry-Lookahead Adder)`;
+        } else {
+          customLabel.innerText = "ALU BIT WIDTH (Data Bus Bit Width)";
+          banner.innerHTML = `<strong>Core Digital:</strong> Arithmetic Logic Unit executing parallel additions via Carry-Lookahead propagation.`;
+        }
+      } else {
+        customSlider.min = 4; customSlider.max = 16; customSlider.value = 8;
+        if (currentLang === 'th') {
+          customLabel.innerText = "FPGA LUT INPUTS (ขนาดลุคอัปเทเบิล N)";
+          banner.innerHTML = `<strong>แก่นระบบดิจิทัล:</strong> ตารางค้นหาค่า (LUT) และสวิตช์เมทริกซ์เชื่อมโยงสัญญาณใน FPGA`;
+        } else {
+          customLabel.innerText = "FPGA LUT INPUTS (Look-Up Table Inputs)";
+          banner.innerHTML = `<strong>Core Digital:</strong> Programmable Look-Up Tables (LUTs) and routing interconnect matrices in FPGA chips.`;
+        }
+      }
+      updateRender();
+    }
+
+    function toggleSpin() {
+      isSpinning = !isSpinning;
+      document.getElementById('btnSpin').classList.toggle('active', isSpinning);
+      if (isSpinning) {
+        runSpin();
+      } else {
+        cancelAnimationFrame(spinAnimId);
+      }
+    }
+
+    function stopSpin() {
+      if (isSpinning) {
+        isSpinning = false;
+        document.getElementById('btnSpin').classList.remove('active');
+        cancelAnimationFrame(spinAnimId);
+      }
+    }
+
+    function runSpin() {
+      if (!isSpinning) return;
+      const slider = document.getElementById('rotSlider');
+      let val = (parseFloat(slider.value) + 0.6) % 360;
+      slider.value = val;
+      updateRender();
+      spinAnimId = requestAnimationFrame(runSpin);
+    }
+
+    async function copyCurrentPrompt() {
+      try {
+        await navigator.clipboard.writeText(currentMasterPrompt);
+        const btn = document.querySelector('.btn-copy-prompt');
+        const oldText = btn.innerText;
+        btn.innerText = "COPIED!";
+        btn.style.background = "#52b788";
+        btn.style.color = "#000";
+        setTimeout(() => {
+          btn.innerText = oldText;
+          btn.style.background = "";
+          btn.style.color = "";
+        }, 1500);
+      } catch (err) {
+        const textArea = document.createElement("textarea");
+        textArea.value = currentMasterPrompt;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        alert(currentLang === 'th' ? "คัดลอก Master Prompt เรียบร้อย!" : "Master Prompt copied to clipboard!");
+      }
+    }
+
+    function printEditorialLayout() {
+      stopSpin();
+
+      const customVal = parseFloat(document.getElementById('customSlider').value);
+      const rot = parseFloat(document.getElementById('rotSlider').value);
+      const tilt = parseFloat(document.getElementById('tiltSlider').value);
+      const baseScale = parseFloat(document.getElementById('scaleSlider').value) / 100;
+
+      const kicker = document.getElementById('magKicker');
+      const title = document.getElementById('magTitle');
+      const summary = document.getElementById('magSummary');
+      const formula = document.getElementById('magFormula');
+      const specsGrid = document.getElementById('magSpecsGrid');
+      const figCaption = document.getElementById('magFigCaption');
+      const issueCode = document.getElementById('magIssueCode');
+      const magAiShort = document.getElementById('magAiShortPrompt');
+
+      if (activeModel === 'pipeline') {
+        kicker.innerText = "MONOGRAPH I • MICROARCHITECTURE";
+        title.innerText = "CPU Datapath & Pipelining";
+        summary.innerHTML = "High-performance processor design relies on instruction pipelining, overlapping execution phases across a shared hardware datapath. Managing data hazards and control stalls remains paramount for optimal instruction throughput.";
+        formula.innerHTML = "Speedup = N / (1 + N·Stall)";
+        magAiShort.innerText = `"Explain how structural hazards and data forwarding resolve pipeline stalls in ${Math.round(customVal)}-stage RISC processors."`;
+        specsGrid.innerHTML = `
+          <div>STAGES: <strong>N = ${Math.round(customVal)} STAGES</strong></div>
+          <div>TOPOLOGY: <strong>DATAPATH BUS</strong></div>
+          <div>HAZARD: <strong>FORWARDING UNIT</strong></div>
+          <div>SCALE: <strong>1:1.618 GOLDEN</strong></div>
+        `;
+        figCaption.innerText = `FIG. 01 — RISC PIPELINE DATAPATH (ROT: ${Math.round(rot)}°, TILT: ${Math.round(tilt)}°)`;
+        issueCode.innerText = "TH-DIGITAL-MONO-001 • PIPELINE";
+      } else if (activeModel === 'fsm') {
+        kicker.innerText = "MONOGRAPH II • SEQUENTIAL LOGIC";
+        title.innerText = "Finite State Machine Synthesis";
+        summary.innerHTML = "Sequential controllers dictate system behaviors through state transition tables and next-state logic. Optimizing state assignments reduces flip-flop count and propagation delay.";
+        formula.innerHTML = "Next = f(State, Input) | Out = g(State)";
+        magAiShort.innerText = `"Derive the optimized Karnaugh maps and D flip-flop excitation equations for a ${Math.round(customVal)}-state Moore machine."`;
+        specsGrid.innerHTML = `
+          <div>STATES: <strong>N = ${Math.round(customVal)} NODES</strong></div>
+          <div>LOGIC: <strong>MOORE / MEALY</strong></div>
+          <div>FLIP-FLOPS: <strong>D-TYPE REGISTERS</strong></div>
+          <div>SCALE: <strong>1:1.618 GOLDEN</strong></div>
+        `;
+        figCaption.innerText = `FIG. 02 — FSM STATE TRANSITION GRAPH (ROT: ${Math.round(rot)}°, TILT: ${Math.round(tilt)}°)`;
+        issueCode.innerText = "TH-DIGITAL-MONO-002 • FSM";
+      } else if (activeModel === 'timing') {
+        kicker.innerText = "MONOGRAPH III • TIMING ANALYSIS";
+        title.innerText = "Propagation Delay & Critical Path";
+        summary.innerHTML = "Synchronous timing closure requires strict adherence to setup and hold constraints. Clock skew and gate propagation delays dictate the maximum operating frequency of VLSI integrated circuits.";
+        formula.innerHTML = "T_clk ≥ T_cq + T_pd + T_setup - T_skew";
+        magAiShort.innerText = `"Calculate the maximum clock frequency given a critical path delay of ${Math.round(customVal)}ns and register setup time."`;
+        specsGrid.innerHTML = `
+          <div>DELAY: <strong>T_pd = ${Math.round(customVal)} ns</strong></div>
+          <div>CONSTRAINT: <strong>SETUP / HOLD</strong></div>
+          <div>MAX FREQ: <strong>f_max = 1 / T_clk</strong></div>
+          <div>SCALE: <strong>1:1.618 GOLDEN</strong></div>
+        `;
+        figCaption.innerText = `FIG. 03 — TIMING WAVEFORM & CRITICAL PATH (ROT: ${Math.round(rot)}°, TILT: ${Math.round(tilt)}°)`;
+        issueCode.innerText = "TH-DIGITAL-MONO-003 • TIMING";
+      } else if (activeModel === 'cache') {
+        kicker.innerText = "MONOGRAPH IV • MEMORY HIERARCHY";
+        title.innerText = "Set-Associative Cache Mapping";
+        summary.innerHTML = "Memory hierarchy bridges the speed gap between CPU registers and main DRAM through multi-level cache structures. Associativity mapping balances conflict misses against hardware complexity.";
+        formula.innerHTML = "AMAT = Hit_Time + (Miss_Rate × Miss_Penalty)";
+        magAiShort.innerText = `"Explain how a ${Math.round(customVal)}-way set-associative cache maps physical memory addresses into Tag, Index, and Offset fields."`;
+        specsGrid.innerHTML = `
+          <div>ASSOCIATIVITY: <strong>${Math.round(customVal)}-WAY</strong></div>
+          <div>MAPPING: <strong>TAG / INDEX / OFFSET</strong></div>
+          <div>METRIC: <strong>AMAT OPTIMIZATION</strong></div>
+          <div>SCALE: <strong>1:1.618 GOLDEN</strong></div>
+        `;
+        figCaption.innerText = `FIG. 04 — CACHE ARCHITECTURE MATRIX (ROT: ${Math.round(rot)}°, TILT: ${Math.round(tilt)}°)`;
+        issueCode.innerText = "TH-DIGITAL-MONO-004 • CACHE";
+      } else if (activeModel === 'alu') {
+        kicker.innerText = "MONOGRAPH V • COMPUTER ARITHMETIC";
+        title.innerText = "Carry-Lookahead ALU Architecture";
+        summary.innerHTML = "High-speed binary addition overcomes the linear delay of ripple-carry adders by generating carry signals in parallel. The ALU integrates logic, shift, and arithmetic operations across wide data buses.";
+        formula.innerHTML = "C_i+1 = G_i + (P_i · C_i)";
+        magAiShort.innerText = `"Design a ${Math.round(customVal)}-bit Carry-Lookahead generator circuit and evaluate its hardware gate complexity."`;
+        specsGrid.innerHTML = `
+          <div>WIDTH: <strong>${Math.round(customVal)}-BIT BUS</strong></div>
+          <div>ADDER: <strong>CARRY-LOOKAHEAD</strong></div>
+          <div>DELAY: <strong>O(log N) COMPLEXITY</strong></div>
+          <div>SCALE: <strong>1:1.618 GOLDEN</strong></div>
+        `;
+        figCaption.innerText = `FIG. 05 — PARALLEL ALU DATAPATH (ROT: ${Math.round(rot)}°, TILT: ${Math.round(tilt)}°)`;
+        issueCode.innerText = "TH-DIGITAL-MONO-005 • ALU";
+      } else {
+        kicker.innerText = "MONOGRAPH VI • FPGA SYNTHESIS";
+        title.innerText = "Programmable Logic Arrays & LUTs";
+        summary.innerHTML = "Field Programmable Gate Arrays replace fixed ASIC wiring with configurable logic blocks and switch matrices. Look-Up Tables implement arbitrary boolean truth tables through SRAM cells.";
+        formula.innerHTML = "LUT_Output = f(Input_A, Input_B, ...)";
+        magAiShort.innerText = `"How do ${Math.round(customVal)}-input Look-Up Tables (LUTs) synthesize combinatorial boolean functions within FPGA switch fabrics?"`;
+        specsGrid.innerHTML = `
+          <div>LUT INPUTS: <strong>${Math.round(customVal)}-INPUTS</strong></div>
+          <div>FABRIC: <strong>CONFIGURABLE MATRIX</strong></div>
+          <div>SYNTHESIS: <strong>SRAM TRUTH TABLE</strong></div>
+          <div>SCALE: <strong>1:1.618 GOLDEN</strong></div>
+        `;
+        figCaption.innerText = `FIG. 06 — FPGA LOGIC BLOCK MATRIX (ROT: ${Math.round(rot)}°, TILT: ${Math.round(tilt)}°)`;
+        issueCode.innerText = "TH-DIGITAL-MONO-006 • FPGA";
+      }
+
+      const container = document.getElementById('printCanvasContainer');
+      const safePrintScale = baseScale * 0.82;
+      const printCyShift = 200;
+
+      let innerSvg = '';
+      if (activeModel === 'pipeline') innerSvg = generatePipelineSVG(rot, tilt, safePrintScale, customVal, '#000000', printCyShift);
+      else if (activeModel === 'fsm') innerSvg = generateFsmSVG(rot, tilt, safePrintScale, customVal, '#000000', printCyShift);
+      else if (activeModel === 'timing') innerSvg = generateTimingSVG(rot, tilt, safePrintScale, customVal, '#000000', printCyShift);
+      else if (activeModel === 'cache') innerSvg = generateCacheSVG(rot, tilt, safePrintScale, customVal, '#000000', printCyShift);
+      else if (activeModel === 'alu') innerSvg = generateAluSVG(rot, tilt, safePrintScale, customVal, '#000000', printCyShift);
+      else innerSvg = generateFpgaSVG(rot, tilt, safePrintScale, customVal, '#000000', printCyShift);
+
+      container.innerHTML = `<svg viewBox="0 0 600 370" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">${innerSvg}</svg>`;
+
+      setTimeout(() => {
+        window.print();
+      }, 300);
+    }
+
+    async function exportSVG() {
+      const svg = document.getElementById('cadStage');
+      if (!svg) return;
+
+      const serializer = new XMLSerializer();
+      let source = serializer.serializeToString(svg);
+      if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+      source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+
+      const fileName = `SiamDigitalLab_${activeModel}_${Date.now()}.svg`;
+      const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+
+      if (navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: 'image/svg+xml' })] })) {
+        try {
+          const file = new File([blob], fileName, { type: 'image/svg+xml' });
+          await navigator.share({
+            title: 'Siam Digital Lab Schematic',
+            text: `Digital Model: ${activeModel.toUpperCase()}`,
+            files: [file]
+          });
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return;
+        }
+      }
+
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = fileName;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      }, 1000);
+    }
+
+    let isTouching = false;
+    let startX = 0;
+    let startRot = 0;
+    const vp = document.getElementById('viewportTouch');
+
+    vp.addEventListener('touchstart', (e) => {
+      isTouching = true;
+      startX = e.touches[0].clientX;
+      startRot = parseFloat(document.getElementById('rotSlider').value);
+      stopSpin();
+    }, { passive: true });
+
+    vp.addEventListener('touchmove', (e) => {
+      if (!isTouching) return;
+      const dx = e.touches[0].clientX - startX;
+      let newRot = (startRot + dx * 0.8) % 360;
+      if (newRot < 0) newRot += 360;
+      document.getElementById('rotSlider').value = newRot;
+      updateRender();
+    }, { passive: true });
+
+    vp.addEventListener('touchend', () => { isTouching = false; });
+
+    function updateRender() {
+      const rot = parseFloat(document.getElementById('rotSlider').value);
+      const tiltDeg = parseFloat(document.getElementById('tiltSlider').value);
+      const scale = parseFloat(document.getElementById('scaleSlider').value) / 100;
+      const customVal = parseFloat(document.getElementById('customSlider').value);
+
+      document.getElementById('valRot').innerText = `${Math.round(rot)}°`;
+      document.getElementById('valTilt').innerText = `${Math.round(tiltDeg)}°`;
+      document.getElementById('valScale').innerText = `${scale.toFixed(2)}x`;
+      
+      const hudTopic = document.getElementById('hudTopic');
+      const hudFormula = document.getElementById('hudFormula');
+      const spec = document.getElementById('specCard');
+      const stage = document.getElementById('cadStage');
+      const promptPreview = document.getElementById('aiPromptPreview');
+
+      if (activeModel === 'pipeline') {
+        document.getElementById('valCustom').innerText = currentLang === 'th' ? `${Math.round(customVal)} สเตจ` : `${Math.round(customVal)} Stages`;
+        hudTopic.innerText = "CPU DATAPATH & PIPELINE ARCHITECTURE";
+        hudFormula.innerHTML = `Speedup = N / (1 + N·Stall) &nbsp;|&nbsp; <span class="hl">Stages: ${Math.round(customVal)}</span>`;
+        
+        if (currentLang === 'th') {
+          spec.innerHTML = `
+            <div class="spec-item">สถาปัตยกรรม: <strong>RISC Pipelined Datapath</strong></div>
+            <div class="spec-item">ขั้นตอนท่อคำสั่ง: <strong>IF, ID, EX, MEM, WB</strong></div>
+            <div class="spec-item">การจัดการแฮซาร์ด: <strong>Data Forwarding & Stalling</strong></div>
+            <div class="spec-item">การประยุกต์ใช้: <strong>CPU หน่วยประมวลผลกลาง</strong></div>
+          `;
+          if (activePromptLevel === 'basic') {
+            currentMasterPrompt = `คุณคืออาจารย์วิชาสถาปัตยกรรมคอมพิวเตอร์ อธิบายเรื่อง "ท่อคำสั่ง CPU (Pipeline Datapath)" ให้นักศึกษาเข้าใจง่าย:
+1. ปัจจุบันผมจำลองท่อคำสั่งความยาว N = ${Math.round(customVal)} สเตจ
+2. เปรียบเทียบเหมือนสายพานการผลิตรถยนต์ ทำไมการแบ่งงานเป็นขั้นตอนย่อยๆ ถึงช่วยเพิ่มความเร็ว (Speedup) ในการรันโปรแกรม?
+3. ปัญหา "Data Hazard (ความขัดแย้งของข้อมูล)" เกิดขึ้นได้อย่างไร และวงจร Forwarding ช่วยแก้ปัญหาอย่างไร?`;
+          } else {
+            currentMasterPrompt = `คุณคือศาสตราจารย์ด้าน VLSI และ Computer Architecture ระดับสูง:
+1. วิเคราะห์ระบบ RISC Datapath ที่มีความยาว N = ${Math.round(customVal)} pipeline stages 
+2. จงคำนวณหาค่า Speedup เชิงทฤษฎีเมื่อกำหนดอัตราความหน่วงสตอล (Stall Penalty) และอธิบายผลกระทบของ Control Hazards ต่อ Branch Prediction Penalty
+3. จงออกแบบวงจร Hazard Detection Unit และ Forwarding Unit สำหรับแก้ปัญหา Read-After-Write (RAW) hazards ในระดับฮาร์ดแวร์`;
+          }
+        } else {
+          spec.innerHTML = `
+            <div class="spec-item">Architecture: <strong>RISC Pipelined Datapath</strong></div>
+            <div class="spec-item">Pipeline Phases: <strong>IF, ID, EX, MEM, WB</strong></div>
+            <div class="spec-item">Hazard Control: <strong>Forwarding & Stalling</strong></div>
+            <div class="spec-item">Application: <strong>High-Performance CPU Cores</strong></div>
+          `;
+          if (activePromptLevel === 'basic') {
+            currentMasterPrompt = `Explain CPU Instruction Pipelining intuitively for undergraduate engineering students:
+1. I am visualizing an N = ${Math.round(customVal)}-stage processor pipeline.
+2. Use an assembly-line factory analogy to explain why overlapping instruction execution increases instruction throughput.
+3. How do data hazards occur when sequential instructions depend on preceding register writes?`;
+          } else {
+            currentMasterPrompt = `You are a Professor of Advanced Computer Architecture and VLSI Systems:
+1. Analyze an N = ${Math.round(customVal)}-stage pipelined datapath.
+2. Derive the generalized pipeline speedup equation incorporating branch misprediction penalties and data hazard stall cycles.
+3. Formulate the exact boolean logic equations for the Hazard Detection Unit and Data Forwarding multiplexer control lines to resolve RAW hazards.`;
+          }
+        }
+        stage.innerHTML = generatePipelineSVG(rot, tiltDeg, scale, customVal, currentColor, 200);
+
+      } else if (activeModel === 'fsm') {
+        document.getElementById('valCustom').innerText = currentLang === 'th' ? `${Math.round(customVal)} สถานะ` : `${Math.round(customVal)} States`;
+        hudTopic.innerText = "FINITE STATE MACHINE (FSM) SYNTHESIS";
+        hudFormula.innerHTML = `Next = f(State, Input) &nbsp;|&nbsp; <span class="hl">Nodes: ${Math.round(customVal)}</span>`;
+        
+        if (currentLang === 'th') {
+          spec.innerHTML = `
+            <div class="spec-item">ประเภทเครื่องกล: <strong>Moore & Mealy Machines</strong></div>
+            <div class="spec-item">ตารางสถานะ: <strong>State Transition Table</strong></div>
+            <div class="spec-item">หน่วยความจำ: <strong>D-Type Flip-Flops</strong></div>
+            <div class="spec-item">การประยุกต์ใช้: <strong>Memory Controller & Protocol FSM</strong></div>
+          `;
+          if (activePromptLevel === 'basic') {
+            currentMasterPrompt = `ช่วยอธิบายเรื่อง "เครื่องจักรสถานะจำกัด (Finite State Machine - FSM)" ในวิชาดิจิทัล:
+1. มีสถานะทั้งหมด N = ${Math.round(customVal)} โหนด เชื่อมโยงกันด้วยเงื่อนไขสัญญาณอินพุต
+2. ความแตกต่างระหว่าง Moore Machine (เอาต์พุตขึ้นกับสถานะปัจจุบัน) และ Mealy Machine (เอาต์พุตขึ้นกับสถานะและอินพุต) คืออะไร? ให้อย่างละ 1 ตัวอย่าง`;
+          } else {
+            currentMasterPrompt = `คุณคือผู้เชี่ยวชาญด้าน Digital Logic Design และ Sequential Circuits:
+1. ออกแบบ N = ${Math.round(customVal)}-state FSM สำหรับควบคุมฮาร์ดแวร์บัสโปรโตคอล
+2. จงสร้าง State Transition Diagram, State Assignment Table และลดรูปสมการด้วย Karnaugh Map สำหรับ D flip-flop excitation inputs
+3. วิเคราะห์ปัญหา State Hazard และวิธีการทำ Glitch-free state decoding ในสถาปัตยกรรมซิงโครนัส`;
+          }
+        } else {
+          spec.innerHTML = `
+            <div class="spec-item">Machine Type: <strong>Moore & Mealy Controllers</strong></div>
+            <div class="spec-item">Transition Logic: <strong>Combinational Next-State</strong></div>
+            <div class="spec-item">State Memory: <strong>D-Type Flip-Flops</strong></div>
+            <div class="spec-item">Application: <strong>Bus Arbitration & Protocols</strong></div>
+          `;
+          if (activePromptLevel === 'basic') {
+            currentMasterPrompt = `Explain Finite State Machines (FSM) clearly for digital logic students:
+1. Visualizing an N = ${Math.round(customVal)}-state sequential controller.
+2. Contrast Moore machines (outputs depend solely on current state) with Mealy machines (outputs depend on state and inputs) using clear hardware examples.`;
+          } else {
+            currentMasterPrompt = `You are a Professor of Digital Integrated Systems:
+1. Synthesize an N = ${Math.round(customVal)}-state FSM for hardware bus arbitration.
+2. Formulate the state transition table, optimal binary state assignment, and derive minimized D flip-flop excitation logic via Karnaugh maps.
+3. Analyze asynchronous glitch propagation hazards during state register updates in high-speed clocks.`;
+          }
+        }
+        stage.innerHTML = generateFsmSVG(rot, tiltDeg, scale, customVal, currentColor, 200);
+
+      } else if (activeModel === 'timing') {
+        document.getElementById('valCustom').innerText = `${Math.round(customVal)} ns`;
+        hudTopic.innerText = "TIMING ANALYSIS & CRITICAL PATH";
+        hudFormula.innerHTML = `T_clk ≥ T_cq + T_pd + T_setup &nbsp;|&nbsp; <span class="hl">Delay: ${Math.round(customVal)}ns</span>`;
+        
+        if (currentLang === 'th') {
+          spec.innerHTML = `
+            <div class="spec-item">ความหน่วงเกต: <strong>Propagation Delay (T_pd)</strong></div>
+            <div class="spec-item">ข้อจำกัดเวลา: <strong>Setup Time & Hold Time</strong></div>
+            <div class="spec-item">เส้นทางวิกฤต: <strong>Critical Path Analysis</strong></div>
+            <div class="spec-item">การประยุกต์ใช้: <strong>Timing Closure ในชิป ASIC</strong></div>
+          `;
+          if (activePromptLevel === 'basic') {
+            currentMasterPrompt = `ช่วยอธิบายเรื่อง "ไดอะแกรมเวลาและความหน่วง (Timing Diagrams)" ในระบบดิจิทัล:
+1. กำหนดความหน่วงเกตลอจิก T_pd = ${Math.round(customVal)} ns
+2. อธิบายความหมายของ Setup Time (เวลาที่ข้อมูลต้องมาก่อนขอบขาขึ้นนาฬิกา) และ Hold Time (เวลาที่ข้อมูลต้องคงอยู่หลังขอบขาขึ้น) ทำไมถ้าผิดเงื่อนไขถึงเกิด Metastability?`;
+          } else {
+            currentMasterPrompt = `คุณคือผู้เชี่ยวชาญด้าน VLSI Timing Closure และ Static Timing Analysis (STA):
+1. พิจารณาวงจรซิงโครนัสที่มี Gate Propagation Delay T_pd = ${Math.round(customVal)} ns ระหว่างเรจิสเตอร์คู่
+2. จงคำนวณหา Maximum Clock Frequency (f_max) โดยอ้างอิงสมการ T_clk ≥ T_cq + T_pd + T_setup - T_skew
+3. วิเคราะห์สาเหตุและการป้องกันอาการ Metastability เมื่อเกิดการละเมิด Setup/Hold constraints ใน Asynchronous crossing domains`;
+          }
+        } else {
+          spec.innerHTML = `
+            <div class="spec-item">Gate Delay: <strong>Propagation Delay (T_pd)</strong></div>
+            <div class="spec-item">Constraints: <strong>Setup and Hold Margins</strong></div>
+            <div class="spec-item">Critical Path: <strong>Max Combinational Delay</strong></div>
+            <div class="spec-item">Application: <strong>ASIC Timing Closure</strong></div>
+          `;
+          if (activePromptLevel === 'basic') {
+            currentMasterPrompt = `Explain Digital Timing Diagrams and Propagation Delay intuitively:
+1. Given a combinatorial gate delay of T_pd = ${Math.round(customVal)} ns.
+2. Explain Setup Time and Hold Time clearly, and describe what physical hardware failure (Metastability) occurs if timing margins are violated.`;
+          } else {
+            currentMasterPrompt = `You are an expert in Static Timing Analysis (STA) and VLSI Design:
+1. Analyze a synchronous path with combinational propagation delay T_pd = ${Math.round(customVal)} ns between master-slave flip-flops.
+2. Derive the maximum clock frequency inequality incorporating clock-to-q delay, combinational delay, setup time, and clock skew.
+3. Formulate mitigation strategies against synchronizer failure and metastability propagation across asynchronous clock domains.`;
+          }
+        }
+        stage.innerHTML = generateTimingSVG(rot, tiltDeg, scale, customVal, currentColor, 200);
+
+      } else if (activeModel === 'cache') {
+        document.getElementById('valCustom').innerText = `${Math.round(customVal)}-Way`;
+        hudTopic.innerText = "MEMORY HIERARCHY & CACHE MAPPING";
+        hudFormula.innerHTML = `AMAT = Hit + (Miss_Rate × Penalty) &nbsp;|&nbsp; <span class="hl">${Math.round(customVal)}-Way Set</span>`;
+        
+        if (currentLang === 'th') {
+          spec.innerHTML = `
+            <div class="spec-item">โครงสร้างแคช: <strong>Tag, Index, Offset</strong></div>
+            <div class="spec-item">ความสัมพันธ์: <strong>Set-Associative Mapping</strong></div>
+            <div class="spec-item">เวลาเข้าถึงเฉลี่ย: <strong>AMAT Optimization</strong></div>
+            <div class="spec-item">การประยุกต์ใช้: <strong>L1/L2 CPU Cache Hierarchy</strong></div>
+          `;
+          if (activePromptLevel === 'basic') {
+            currentMasterPrompt = `ช่วยอธิบายเรื่อง "หน่วยความจำแคช (Cache Memory)" ในสถาปัตยกรรมคอมพิวเตอร์:
+1. ปัจจุบันใช้ระบบแคชแบบ ${Math.round(customVal)}-way set-associative cache
+2. อธิบายว่าเวลา CPU ร้องขอข้อมูล หน่วยความจำจะแบ่งแอดเดรสออกเป็น Tag, Index และ Offset อย่างไร และทำไมแคชถึงช่วยลดเวลาคอย RAM หลักได้มหาศาล?`;
+          } else {
+            currentMasterPrompt = `คุณคือศาสตราจารย์ด้าน Computer Memory Systems และ Hierarchy Design:
+1. ออกแบบ ${Math.round(customVal)}-way set-associative cache ขนาด 32KB ที่มี block size 64 bytes
+2. จงแสดงวิธีการแตกบิตของ Physical Address เป็น Tag, Index และ Byte Offset
+3. คำนวณค่า Average Memory Access Time (AMAT) และเปรียบเทียบข้อดี-ข้อเสียระหว่าง Direct-Mapped, Set-Associative และ Fully-Associative caches`;
+          }
+        } else {
+          spec.innerHTML = `
+            <div class="spec-item">Address Breakdown: <strong>Tag, Index, Offset</strong></div>
+            <div class="spec-item">Mapping Policy: <strong>Set-Associative Cache</strong></div>
+            <div class="spec-item">Performance: <strong>AMAT Minimization</strong></div>
+            <div class="spec-item">Application: <strong>CPU L1/L2 Data Caches</strong></div>
+          `;
+          if (activePromptLevel === 'basic') {
+            currentMasterPrompt = `Explain CPU Cache Memory and Memory Hierarchy intuitively:
+1. Visualizing a ${Math.round(customVal)}-way set-associative cache architecture.
+2. Explain how CPU memory addresses are split into Tag, Index, and Offset fields, and why caching bridges the speed gap to slow DRAM.`;
+          } else {
+            currentMasterPrompt = `You are a Professor of Computer Memory Architecture:
+1. Configure a ${Math.round(customVal)}-way set-associative 32KB cache with 64-byte cache blocks.
+2. Derive the exact bit-field decomposition for Tag, Index, and Offset given a 32-bit physical address space.
+3. Formulate AMAT equations and analyze conflict miss rates across Direct-Mapped vs. ${Math.round(customVal)}-way Set-Associative organizations.`;
+          }
+        }
+        stage.innerHTML = generateCacheSVG(rot, tiltDeg, scale, customVal, currentColor, 190);
+
+      } else if (activeModel === 'alu') {
+        document.getElementById('valCustom').innerText = `${Math.round(customVal)}-Bit`;
+        hudTopic.innerText = "ARITHMETIC LOGIC UNIT (ALU) DATAPATH";
+        hudFormula.innerHTML = `C_i+1 = G_i + (P_i · C_i) &nbsp;|&nbsp; <span class="hl">${Math.round(customVal)}-Bit ALU</span>`;
+        
+        if (currentLang === 'th') {
+          spec.innerHTML = `
+            <div class="spec-item">หน่วยคำนวณ: <strong>Arithmetic Logic Unit</strong></div>
+            <div class="spec-item">วงจรบวกเลขเร็ว: <strong>Carry-Lookahead Adder</strong></div>
+            <div class="spec-item">ความกว้างข้อมูล: <strong>${Math.round(customVal)}-Bit Parallel Bus</strong></div>
+            <div class="spec-item">การประยุกต์ใช้: <strong>CPU Core Execution Engine</strong></div>
+          `;
+          if (activePromptLevel === 'basic') {
+            currentMasterPrompt = `ช่วยอธิบายเรื่อง "หน่วยคำนวณและตรรกะ (ALU)" ในคอมพิวเตอร์:
+1. พิจารณา ALU ขนาดความกว้าง ${Math.round(customVal)} บิต
+2. ทำไมวงจรบวกแบบธรรมดา (Ripple-Carry Adder) ถึงช้าเมื่อบิตเยอะขึ้น และวงจรทดเร็ว (Carry-Lookahead Adder) แก้ปัญหารอนำทดเลขอย่างไร?`;
+          } else {
+            currentMasterPrompt = `คุณคือผู้เชี่ยวชาญด้าน Computer Arithmetic และ VLSI Datapath Design:
+1. ออกแบบ ${Math.round(customVal)}-bit ALU ที่ใช้ Carry-Lookahead Adder (CLA) เพื่อลดความหน่วงจาก O(N) สู่ O(log N)
+2. จงเขียนสมการ Generate (G_i) และ Propagate (P_i) พร้อมทั้งสร้างวงจร Lookahead Carry Generator 4-bit blocks
+3. วิเคราะห์การใช้ฮาร์ดแวร์เกต (Gate Count) เปรียบระหว่าง Ripple-Carry และ Carry-Lookahead adders`;
+          }
+        } else {
+          spec.innerHTML = `
+            <div class="spec-item">Execution Unit: <strong>Arithmetic Logic Unit</strong></div>
+            <div class="spec-item">Fast Addition: <strong>Carry-Lookahead Adder</strong></div>
+            <div class="spec-item">Data Width: <strong>${Math.round(customVal)}-Bit Datapath</strong></div>
+            <div class="spec-item">Application: <strong>CPU Processor Core</strong></div>
+          `;
+          if (activePromptLevel === 'basic') {
+            currentMasterPrompt = `Explain the Arithmetic Logic Unit (ALU) and binary addition clearly:
+1. Examining a ${Math.round(customVal)}-bit parallel ALU architecture.
+2. Why does a standard Ripple-Carry Adder become sluggish as bit-width increases, and how does a Carry-Lookahead Adder calculate carry bits instantly?`;
+          } else {
+            currentMasterPrompt = `You are a specialist in Computer Arithmetic and High-Speed Datapath Design:
+1. Design a ${Math.round(customVal)}-bit ALU utilizing a Carry-Lookahead Adder (CLA) to achieve O(log N) propagation delay.
+2. Formulate the exact Generate (G_i) and Propagate (P_i) logic equations and construct hierarchical 4-bit CLA carry generators.
+3. Evaluate the transistor count and gate complexity trade-offs between Ripple-Carry and Carry-Lookahead adder topologies.`;
+          }
+        }
+        stage.innerHTML = generateAluSVG(rot, tiltDeg, scale, customVal, currentColor, 190);
+
+      } else {
+        document.getElementById('valCustom').innerText = `${Math.round(customVal)}-Input`;
+        hudTopic.innerText = "FPGA LOGIC BLOCKS & LOOK-UP TABLES";
+        hudFormula.innerHTML = `LUT_Output = f(In_1, In_2, ..., In_N) &nbsp;|&nbsp; <span class="hl">${Math.round(customVal)}-Input LUT</span>`;
+        
+        if (currentLang === 'th') {
+          spec.innerHTML = `
+            <div class="spec-item">ลอจิกบล็อก: <strong>Look-Up Table (LUT)</strong></div>
+            <div class="spec-item">สถาปัตยกรรม: <strong>Configurable Logic Block (CLB)</strong></div>
+            <div class="spec-item">เมทริกซ์เชื่อมโยง: <strong>Programmable Interconnects</strong></div>
+            <div class="spec-item">การประยุกต์ใช้: <strong>FPGA Hardware Prototyping</strong></div>
+          `;
+          if (activePromptLevel === 'basic') {
+            currentMasterPrompt = `ช่วยอธิบายเรื่อง "FPGA และตารางค้นหาค่า (Look-Up Tables - LUT)" ให้นักศึกษาเข้าใจง่าย:
+1. ปัจจุบันใช้สถาปัตยกรรม ${Math.round(customVal)}-input LUT ใน FPGA
+2. แทนที่จะใช้เกตลอจิกตายตัวเหมือน ASIC ทำไม FPGA ถึงใช้หน่วยความจำ SRAM เล็กๆ เป็นตารางความจริง (Truth Table) เพื่อจำลองฟังก์ชันบูลีนทุกรูปแบบได้?`;
+          } else {
+            currentMasterPrompt = `คุณคือผู้เชี่ยวชาญด้าน FPGA Architecture และ Hardware Synthesis:
+1. วิเคราะห์โครงสร้าง Configurable Logic Block (CLB) ที่ประกอบด้วย ${Math.round(customVal)}-input Look-Up Tables (LUTs) และ Flip-Flops
+2. อธิบายวิธีการสังเคราะห์ฟังก์ชันบูลีนเชิงซ้อนลงในหน่วยความจำ SRAM ของ LUT พร้อมทั้งคำนวณจำนวนเซลล์หน่วยความจำที่ต้องใช้
+3. วิเคราะห์ความท้าทายด้าน Routing Delay และ Switch Matrix Interconnects ในการทำ Timing Closure บน FPGA ชิปสมัยใหม่`;
+          }
+        } else {
+          spec.innerHTML = `
+            <div class="spec-item">Logic Element: <strong>Look-Up Table (LUT)</strong></div>
+            <div class="spec-item">Architecture: <strong>Configurable Logic Block</strong></div>
+            <div class="spec-item">Interconnect: <strong>Programmable Switch Matrix</strong></div>
+            <div class="spec-item">Application: <strong>FPGA Prototyping & ASIC Emulation</strong></div>
+          `;
+          if (activePromptLevel === 'basic') {
+            currentMasterPrompt = `Explain FPGA Lookup Tables (LUTs) and Programmable Logic intuitively:
+1. Visualizing an FPGA fabric built from ${Math.round(customVal)}-input LUTs.
+2. Unlike fixed ASIC gates, why does an FPGA use tiny SRAM memory cells as truth tables to implement any arbitrary boolean logic function?`;
+          } else {
+            currentMasterPrompt = `You are an expert in FPGA Fabric Architecture and Logic Synthesis:
+1. Analyze a Configurable Logic Block (CLB) containing ${Math.round(customVal)}-input Look-Up Tables (LUTs) coupled with synchronous registers.
+2. Explain how arbitrary boolean logic functions are mapped into SRAM truth table cells within the LUT multiplexer tree.
+3. Examine routing resource congestion and programmable switch matrix delay overhead during FPGA placement and routing (P&R).`;
+          }
+        }
+        stage.innerHTML = generateFpgaSVG(rot, tiltDeg, scale, customVal, currentColor, 185);
+      }
+
+      promptPreview.innerText = currentMasterPrompt;
+    }
+
+    // 1. PIPELINE DATAPATH SCHEMATIC SVG
+    function generatePipelineSVG(rotDeg, tiltDeg, scale, stages, color, cyPos) {
+      const cx = 300, cy = cyPos;
+      const rad = (rotDeg * Math.PI) / 180;
+      const tilt = Math.sin((tiltDeg * Math.PI) / 180);
+
+      let svgHtml = `
+        <defs>
+          <pattern id="gridPipe_${cyPos}" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="${color}" stroke-opacity="0.05" stroke-width="0.8"/>
+          </pattern>
+        </defs>
+        <rect width="600" height="370" fill="url(#gridPipe_${cyPos})"/>
+        <line x1="${cx}" y1="35" x2="${cx}" y2="350" stroke="${color}" stroke-opacity="0.3" stroke-width="1.2" stroke-dasharray="4 4"/>
+      `;
+
+      const boxW = 50 * scale, boxH = 65 * scale, startX = 60;
+      const totalSpan = 480;
+      const gap = (totalSpan - (stages * boxW)) / (stages - 1);
+
+      for (let i = 0; i < stages; i++) {
+        const bx = startX + i * (boxW + gap);
+        const by = cy - 30 * scale;
+        
+        svgHtml += `
+          <rect x="${bx}" y="${by}" width="${boxW}" height="${boxH}" rx="4" fill="rgba(59, 130, 246, 0.05)" stroke="${color}" stroke-width="1.8"/>
+          <text x="${bx + boxW/2}" y="${by + boxH/2 - 4}" fill="${color}" font-size="10" font-weight="bold" font-family="monospace" text-anchor="middle">STAGE ${i+1}</text>
+          <text x="${bx + boxW/2}" y="${by + boxH/2 + 10}" fill="${color}" font-size="7.5" font-family="monospace" text-anchor="middle" opacity="0.7">REG R${i}</text>
+        `;
+
+        if (i < stages - 1) {
+          const nextBx = startX + (i + 1) * (boxW + gap);
+          svgHtml += `
+            <line x1="${bx + boxW}" y1="${by + boxH/2}" x2="${nextBx}" y2="${by + boxH/2}" stroke="${color}" stroke-width="2" marker-end="url(#arrow)"/>
+            <circle cx="${bx + boxW + gap/2}" cy="${by + boxH/2}" r="3" fill="#ffb703"/>
+          `;
+        }
+      }
+
+      svgHtml += `
+        <text x="20" y="340" fill="${color}" font-size="10" font-family="monospace" opacity="0.9">CPU DATAPATH PIPELINE ARCHITECTURE (${stages} STAGES)</text>
+        <text x="20" y="355" fill="${color}" font-size="8.5" font-family="monospace" opacity="0.5">SYNCHRONOUS CLOCK BUS | FORWARDING & HAZARD DETECTION</text>
+      `;
+      return svgHtml;
+    }
+
+    // 2. FSM STATE GRAPH SVG
+    function generateFsmSVG(rotDeg, tiltDeg, scale, numStates, color, cyPos) {
+      const cx = 300, cy = cyPos;
+      let svgHtml = `
+        <defs>
+          <pattern id="gridFsm_${cyPos}" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="${color}" stroke-opacity="0.05" stroke-width="0.8"/>
+          </pattern>
+        </defs>
+        <rect width="600" height="370" fill="url(#gridFsm_${cyPos})"/>
+      `;
+
+      const radius = 110 * scale;
+      const nodes = [];
+      for (let i = 0; i < numStates; i++) {
+        const angle = (i / numStates) * Math.PI * 2 - Math.PI/2;
+        nodes.push({
+          x: cx + radius * Math.cos(angle),
+          y: cy + radius * Math.sin(angle) * 0.7,
+          id: `S${i}`
+        });
+      }
+
+      for (let i = 0; i < numStates; i++) {
+        const next = (i + 1) % numStates;
+        svgHtml += `
+          <line x1="${nodes[i].x}" y1="${nodes[i].y}" x2="${nodes[next].x}" y2="${nodes[next].y}" stroke="${color}" stroke-width="1.6" stroke-dasharray="4 2" opacity="0.7"/>
+        `;
+      }
+
+      nodes.forEach(n => {
+        svgHtml += `
+          <circle cx="${n.x}" cy="${n.y}" r="22" fill="#04080f" stroke="${color}" stroke-width="2"/>
+          <text x="${n.x}" y="${n.y + 4}" fill="${color}" font-size="10" font-weight="bold" font-family="monospace" text-anchor="middle">${n.id}</text>
+        `;
+      });
+
+      svgHtml += `
+        <text x="20" y="340" fill="${color}" font-size="10" font-family="monospace" opacity="0.9">FINITE STATE MACHINE (FSM) TRANSITION GRAPH</text>
+        <text x="20" y="355" fill="${color}" font-size="8.5" font-family="monospace" opacity="0.5">SEQUENTIAL LOGIC CONTROLLER | ${numStates} STATES</text>
+      `;
+      return svgHtml;
+    }
+
+    // 3. TIMING WAVEFORM SVG
+    function generateTimingSVG(rotDeg, tiltDeg, scale, delayNs, color, cyPos) {
+      const cx = 300, cy = cyPos;
+      let svgHtml = `
+        <defs>
+          <pattern id="gridTime_${cyPos}" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="${color}" stroke-opacity="0.05" stroke-width="0.8"/>
+          </pattern>
+        </defs>
+        <rect width="600" height="370" fill="url(#gridTime_${cyPos})"/>
+      `;
+
+      const startX = 80, y1 = cy - 50, y2 = cy, y3 = cy + 50;
+      svgHtml += `
+        <text x="40" y="${y1 + 4}" fill="${color}" font-size="9" font-family="monospace">CLK</text>
+        <path d="M ${startX} ${y1+15} h 35 v -30 h 35 v 30 h 35 v -30 h 35 v 30 h 35 v -30 h 35 v 30 h 35 v -30 h 35 v 30" fill="none" stroke="${color}" stroke-width="1.8"/>
+
+        <text x="40" y="${y2 + 4}" fill="#ffb703" font-size="9" font-family="monospace">DATA_IN</text>
+        <path d="M ${startX} ${y2+15} h 50 l 20 -30 h 70 l 20 30 h 90" fill="none" stroke="#ffb703" stroke-width="2"/>
+
+        <text x="40" y="${y3 + 4}" fill="#38bdf8" font-size="9" font-family="monospace">DATA_OUT</text>
+        <path d="M ${startX} ${y3+15} h 95 l 20 -30 h 70 l 20 30 h 65" fill="none" stroke="#38bdf8" stroke-width="2"/>
+
+        <line x1="170" y1="${y1-20}" x2="170" y2="${y3+25}" stroke="#ef4444" stroke-width="1.2" stroke-dasharray="3 3"/>
+        <text x="175" y="${y1-25}" fill="#ef4444" font-size="8" font-family="monospace">T_pd = ${delayNs}ns</text>
+
+        <text x="20" y="340" fill="${color}" font-size="10" font-family="monospace" opacity="0.9">STATIC TIMING ANALYSIS & CRITICAL PATH</text>
+        <text x="20" y="355" fill="${color}" font-size="8.5" font-family="monospace" opacity="0.5">PROPAGATION DELAY & SETUP/HOLD MARGINS</text>
+      `;
+      return svgHtml;
+    }
+
+    // 4. CACHE ARCHITECTURE SVG
+    function generateCacheSVG(rotDeg, tiltDeg, scale, ways, color, cyPos) {
+      const cx = 300, cy = cyPos;
+      let svgHtml = `
+        <defs>
+          <pattern id="gridCache_${cyPos}" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="${color}" stroke-opacity="0.05" stroke-width="0.8"/>
+          </pattern>
+        </defs>
+        <rect width="600" height="370" fill="url(#gridCache_${cyPos})"/>
+      `;
+
+      const startX = 140, startY = cy - 70, blockH = 32 * scale;
+      for (let w = 0; w < ways; w++) {
+        const by = startY + w * (blockH + 10);
+        svgHtml += `
+          <rect x="${startX}" y="${by}" width="320" height="${blockH}" rx="4" fill="rgba(59, 130, 246, 0.04)" stroke="${color}" stroke-width="1.6"/>
+          <text x="${startX + 15}" y="${by + blockH/2 + 4}" fill="${color}" font-size="9" font-weight="bold" font-family="monospace">WAY ${w}: [TAG] [INDEX] [DATA BLOCK]</text>
+        `;
+      }
+
+      svgHtml += `
+        <text x="20" y="340" fill="${color}" font-size="10" font-family="monospace" opacity="0.9">SET-ASSOCIATIVE CACHE MEMORY HIERARCHY (${ways}-WAY)</text>
+        <text x="20" y="355" fill="${color}" font-size="8.5" font-family="monospace" opacity="0.5">TAG-INDEX-OFFSET MAPPING | AMAT OPTIMIZATION</text>
+      `;
+      return svgHtml;
+    }
+
+    // 5. ALU DATAPATH SVG
+    function generateAluSVG(rotDeg, tiltDeg, scale, bitWidth, color, cyPos) {
+      const cx = 300, cy = cyPos;
+      let svgHtml = `
+        <defs>
+          <pattern id="gridAlu_${cyPos}" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="${color}" stroke-opacity="0.05" stroke-width="0.8"/>
+          </pattern>
+        </defs>
+        <rect width="600" height="370" fill="url(#gridAlu_${cyPos})"/>
+      `;
+
+      svgHtml += `
+        <polygon points="200,${cy-70} 400,${cy-40} 400,${cy+40} 200,${cy+70} 220,${cy}" fill="rgba(59, 130, 246, 0.06)" stroke="${color}" stroke-width="2.2"/>
+        <text x="300" y="${cy - 10}" fill="${color}" font-size="14" font-weight="bold" font-family="monospace" text-anchor="middle">ALU (${bitWidth}-BIT)</text>
+        <text x="300" y="${cy + 12}" fill="${color}" font-size="9" font-family="monospace" text-anchor="middle">CARRY-LOOKAHEAD DATAPATH</text>
+
+        <line x1="120" y1="${cy-30}" x2="205" y2="${cy-30}" stroke="#ffb703" stroke-width="2" marker-end="url(#arrow)"/>
+        <line x1="120" y1="${cy+30}" x2="205" y2="${cy+30}" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="160" y="${cy-38}" fill="#ffb703" font-size="8.5" font-family="monospace">Operand A</text>
+        <text x="160" y="${cy+42}" fill="#38bdf8" font-size="8.5" font-family="monospace">Operand B</text>
+
+        <line x1="395" y1="${cy}" x2="480" y2="${cy}" stroke="${color}" stroke-width="2.5" marker-end="url(#arrow)"/>
+        <text x="435" y="${cy-8}" fill="${color}" font-size="9" font-weight="bold" font-family="monospace">Result [${bitWidth}-1:0]</text>
+
+        <text x="20" y="340" fill="${color}" font-size="10" font-family="monospace" opacity="0.9">ARITHMETIC LOGIC UNIT (${bitWidth}-BIT PARALLEL BUS)</text>
+        <text x="20" y="355" fill="${color}" font-size="8.5" font-family="monospace" opacity="0.5">CARRY-LOOKAHEAD ADDER | O(log N) DELAY</text>
+      `;
+      return svgHtml;
+    }
+
+    // 6. FPGA LUT MATRIX SVG
+    function generateFpgaSVG(rotDeg, tiltDeg, scale, lutInputs, color, cyPos) {
+      const cx = 300, cy = cyPos;
+      let svgHtml = `
+        <defs>
+          <pattern id="gridFpga_${cyPos}" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="${color}" stroke-opacity="0.05" stroke-width="0.8"/>
+          </pattern>
+        </defs>
+        <rect width="600" height="370" fill="url(#gridFpga_${cyPos})"/>
+      `;
+
+      const rows = 3, cols = 4, cellW = 85 * scale, cellH = 50 * scale;
+      const startX = cx - (cols * cellW) / 2, startY = cy - (rows * cellH) / 2;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const rx = startX + c * (cellW + 10);
+          const ry = startY + r * (cellH + 10);
+          svgHtml += `
+            <rect x="${rx}" y="${ry}" width="${cellW}" height="${cellH}" rx="4" fill="rgba(59, 130, 246, 0.04)" stroke="${color}" stroke-width="1.5"/>
+            <text x="${rx + cellW/2}" y="${ry + cellH/2 + 3}" fill="${color}" font-size="8.5" font-weight="bold" font-family="monospace" text-anchor="middle">LUT-${lutInputs}</text>
+          `;
+        }
+      }
+
+      svgHtml += `
+        <text x="20" y="340" fill="${color}" font-size="10" font-family="monospace" opacity="0.9">FPGA CONFIGURABLE LOGIC BLOCKS (${lutInputs}-INPUT LUT)</text>
+        <text x="20" y="355" fill="${color}" font-size="8.5" font-family="monospace" opacity="0.5">PROGRAMMABLE SWITCH MATRIX & SRAM TRUTH TABLES</text>
+      `;
+      return svgHtml;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      switchModel('pipeline');
+    });
+  </script>
+</body>
+</html>
